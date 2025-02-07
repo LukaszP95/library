@@ -38,38 +38,41 @@ Obsłuż wyjątki, takie jak wypożyczenie niedostępnej książki lub zwrot ksi
 
 
 
-class BookError:
-    pass
+class BookError(Exception):
+
+    def __init__(self):
+        self.message = 'Book has not found.'
+
 
 class BookNotFound(BookError):
-    def __init__(self, title: str):
-        super().__init__(f"Book '{title}' not exists.")
+    
+    def __init__(self):
+        self.message = 'Book has not found.'
+
 
 class BookNotAvailable(BookError):
-    def __init__(self, title: str):
-        super().__init__(f"Book '{title}' is already borrowed.")
+
+    def __init__(self):
+        self.message = 'Book is not available.' 
+
 
 class BookAlreadyReturned(BookError):
-    def __init__(self, title: str):
-        super().__init__(f"Book '{title}' is already returned.")
+
+    def __init__(self):
+        self.message = 'Book is already returned.' 
 
 
 class Book:
+
     def __init__(self, title: str, author: str):
         self.title = title
         self.author = author
         self.is_available = True
 
-
     def borrow(self):
-        if not self.is_available:
-            raise BookNotAvailable
         self.is_available = False
 
-
     def return_(self):
-        if self.is_available:
-            raise BookAlreadyReturned
         self.is_available = True
 
 
@@ -79,44 +82,47 @@ class Library:
         self.books: list[Book] = []
 
     def add_books(self, book: Book):
-        print(f"Adding book: {book.title} by {book.author}.")
         self.books.append(book)
 
     def borrow_book(self, book_title: str):
-        print(f"Attempting to borrow book with title: {book_title}")
+        
         for book in self.books:
+
             if book.title == book_title:
+
                 if book.is_available:
                     book.borrow()
-                else:
-                    print(f"{book_title} is not available")
                     return
-        print(f"{book_title} not exists")
+                
+                else:
+                    raise BookNotAvailable
+
+        raise BookNotFound
 
     def return_book(self, book_title: str):
-        print(f"Attempting to return book with title: {book_title}")
+
         for book in self.books:
+
             if book.title == book_title:
+
                 if not book.is_available:
                     book.return_()
+                    return 
+                
                 else:
-                    print(f"book {book_title} was not borrowed")
-                return
-        print(f"Book {book_title} does not exist is the library")
+                    raise BookAlreadyReturned
+                
+        raise BookNotFound
 
     def get_available_books(self) -> list[Book]:
         available_books = [book for book in self.books if book.is_available]
-        print(f"Available books: {[book.title for book in available_books]}")
         return available_books
 
     def filter_books_by_author(self, author: str) -> list[Book]:
         filtered_books = []
-        print(f"Attempting to check books by {author}")
         for book in self.books:
-            print(f"checking book {book.title} by {author}")
             if book.author == author:
                 filtered_books.append(book)
-                print(f"book added: {book.title}")
         return filtered_books
 
 
@@ -143,24 +149,17 @@ def main():
     show_books("--- All available books at beginning: ---", library.books)
 
     try:
+
         library.borrow_book("Frankenstein")
-    except BookError as e:
-        print(e)
+        library.return_book("Frankenstein")
 
-    try:
-        library.borrow_book("Frankenstein")
     except BookError as e:
-        print(e)
-
-    show_books("--- All available books after borrow: ---", library.books)
-
-    try:
-        library.return_book("Robinson Crusoe")
-    except BookError as e:
-        print(e)
+        print(e.message)
+        return
 
     show_books("--- All available books after return: ---", library.books)
 
 if __name__ == '__main__':
     main()
+
 
